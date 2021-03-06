@@ -1,0 +1,28 @@
+{
+  "name": "ordering-cli",
+  "version": "1.0.3",
+  "description": "Программа сортирует файлы в папки по их типу",
+  "main": "./src/index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [
+    "ordering"
+  ],
+  "author": "Valentin Alekhin <alekhin.v99gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ValentinAlekhin/ordering-cli"
+  },
+  "homepage": "https://github.com/ValentinAlekhin/ordering-cli",
+  "license": "ISC",
+  "dependencies": {
+    "app-root-path": "^3.0.0",
+    "file-type": "^16.2.0",
+    "fs-extra": "^9.1.0",
+    "is-valid-path": "^0.1.1"
+  },
+  "devDependencies": {
+    "jest": "^26.6.3"
+  }
+}
