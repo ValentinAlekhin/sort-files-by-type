@@ -7,23 +7,39 @@ const FileType = require('file-type')
 const pathValidator = require('./lib/pathValidator/pathValidator')
 const recursiveSearch = require('./lib/recursiveSearch/recursiveSearch')
 
-const defaultEvents = {
-  startScan: null,
-  endScan: null,
-  handleFile: null,
+const defaultOptions = {
+  events: {
+    scanStart: null,
+    scanEnd: null,
+    handleFile: null,
+  },
+  validations: {
+    validateString: true,
+    validateExists: true,
+    validateAppPath: true,
+  },
 }
 
-const sortFilesByType = async (directory, events = defaultEvents) => {
+const sortFilesByType = async (directory, options = defaultOptions) => {
   try {
-    pathValidator(directory)
+    const { scanStart, scanEnd, handleFile } = {
+      ...defaultOptions.events,
+      ...options.events,
+    }
 
-    const { startScan, endScan, handleFile } = { ...defaultEvents, ...events }
+    const pathValidatorOptions = {
+      ...defaultOptions.validations,
+      ...options.validations,
+    }
+
+    pathValidator(directory, pathValidatorOptions)
+
     let files = {}
     let currentFile
 
-    if (startScan) startScan()
+    if (scanStart) scanStart()
     const filesToWork = await recursiveSearch(directory)
-    if (endScan) endScan(files.length)
+    if (scanEnd) scanEnd(files.length)
 
     if (!filesToWork.length) {
       throw new Error('No files')
