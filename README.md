@@ -32,3 +32,33 @@ async function start() {
 
 start()
 ```
+
+## Options example
+
+```js
+const SortFilesByType = require('sort-files-by-type')
+
+const options = {
+  events: {
+    // Called before scanning starts
+    scanStart: () => console.log('Scanning started'),
+    // Called after scanning
+    scanEnd: totalFiles => console.log(`Found ${totalFiles} files`),
+    // Called after processing each file
+    handleFile: (index, totalFiles) =>
+      console.log(`Processed ${index} files out of ${totalFiles}`),
+  },
+  validations: {
+    // String validation
+    validateString: true,
+    // Validation of existence directory
+    validateExists: true,
+    // Check if the script is executed in the application directory
+    validateAppPath: true,
+  },
+}
+
+SortFilesByType('path/to/files/', options)
+  .then((res = console.log(res)))
+  .catch(err => console.log(err))
+```
