@@ -2,7 +2,7 @@ const path = require('path')
 
 const appRootPath = require('app-root-path').toString()
 
-const pathValidator = require('./path')
+const pathValidator = require('./pathValidator')
 
 describe('Test path validator:', () => {
   let options

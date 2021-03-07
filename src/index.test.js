@@ -1,28 +1,14 @@
 const fs = require('fs-extra')
 const path = require('path')
 
-const appRootPath = require('app-root-path').toString()
-const dataPath = path.join(appRootPath, 'data')
-const testFilesPath = path.join(appRootPath, 'test', 'files')
+const { setup, dataPath } = require('./test/setup')
 
-const FilesOrganizer = require('./FilesOrganizer/FilesOrganizer')
+const sortFilesByType = require('./index')
 
 describe('Test FilesOrganizer:', () => {
-  let filesOrganizer
-
-  beforeEach(() => {
-    if (!fs.existsSync(dataPath)) {
-      fs.mkdirSync(dataPath)
-    }
-    fs.copySync(testFilesPath, dataPath)
-    filesOrganizer = new FilesOrganizer(dataPath)
-  })
-
-  afterEach(() => {
-    fs.removeSync(dataPath)
-  })
+  setup()
 
   it('should work', async () => {
-    await filesOrganizer.start()
+    await sortFilesByType(dataPath)
   })
 })

@@ -10,7 +10,7 @@ const createError = message => new Error(chalk.red.bold(message))
 const def = {
   validateString: true,
   validateExists: true,
-  validateAppPath: false,
+  validateAppPath: true,
 }
 
 const pathValidator = (directory, options = def) => {

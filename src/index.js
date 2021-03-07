@@ -1,165 +1,208 @@
 const fs = require('fs-extra')
 const path = require('path')
 
+const appRootPath = require('app-root-path').toString()
 const FileType = require('file-type')
 
-class FilesOrganizer {
-  constructor(directory) {
-    this.directory = directory
-    this.files = {}
-    this.currentFile = {}
-  }
+const pathValidator = require('./lib/pathValidator/pathValidator')
+const recursiveSearch = require('./lib/recursiveSearch/recursiveSearch')
 
-  async start() {
-    await this.recursiveSearch(this.directory)
+const defaultEvents = {
+  startScan: null,
+  endScan: null,
+  handleFile: null,
+}
 
-    return this.files
-  }
+const sortFilesByType = async (directory, events = defaultEvents) => {
+  try {
+    pathValidator(directory)
 
-  async recursiveSearch(directory) {
-    try {
-      const filesAndDirs = await fs.readdir(directory)
+    const { startScan, endScan, handleFile } = { ...defaultEvents, ...events }
+    let files = {}
+    let currentFile
 
-      for (const current of filesAndDirs) {
-        const pathToCurrent = path.join(directory, current)
-        const stat = await fs.lstat(pathToCurrent)
+    if (startScan) startScan()
+    const filesToWork = await recursiveSearch(directory)
+    if (endScan) endScan(files.length)
 
-        if (stat.isDirectory()) {
-          await this.recursiveSearch(pathToCurrent)
-          this.removeDirectory(pathToCurrent)
-        } else await this.fileHandler(pathToCurrent)
-      }
-    } catch (e) {
-      throw new Error(e)
+    if (!filesToWork.length) {
+      throw new Error('No files')
     }
-  }
 
-  removeDirectory(directory) {
-    if (this.isUsedDirectory(directory)) return
+    for (let i = 0; i < filesToWork.length; i++) {
+      const file = filesToWork[i]
+      await fileHandler(file)
+      if (handleFile) handleFile(i + 1, filesToWork.length)
+    }
 
-    fs.removeSync(directory)
-  }
+    const dirsToRemove = await fs.readdir(directory)
+    for (const dir of dirsToRemove) {
+      const candidate = path.join(directory, dir)
+      await removeDirectory(candidate)
+    }
 
-  isUsedDirectory(directory) {
-    let isUsedDirectory = false
+    async function removeDirectory(directory) {
+      try {
+        if (isUsedDirectory(directory)) return
 
-    Object.values(this.files).forEach(fileType => {
-      if (fileType.path === directory) isUsedDirectory = true
-    })
+        await fs.remove(directory)
+      } catch (e) {
+        throw new Error(e)
+      }
+    }
 
-    return isUsedDirectory
-  }
+    function isUsedDirectory(directory) {
+      let isUsedDirectory = false
 
-  async fileHandler(file) {
-    try {
-      await this.setCurrentFile(file)
-      this.createFileDirectory()
-      this.createFileName()
+      Object.values(files).forEach(fileType => {
+        if (fileType.path === directory) isUsedDirectory = true
+      })
 
-      if (this.isFileOnRightDir()) {
-        if (!this.isFileHasRightExt()) {
-          this.renameFile()
+      return isUsedDirectory
+    }
+
+    async function fileHandler(file) {
+      try {
+        await setCurrentFile(file)
+        await createFileDirectory()
+        await createFileName()
+
+        if (isFileOnRightDir()) {
+          if (!isFileHasRightExt()) {
+            await renameFile()
+            return
+          }
+          return
+        }
+
+        const { base, type } = currentFile
+        const fileDir = files[type].path
+
+        const newFilePath = path.join(fileDir, base)
+
+        await fs.copyFile(file, newFilePath)
+        await fs.remove(file)
+      } catch (e) {
+        throw new Error(e)
+      }
+    }
+
+    async function setCurrentFile(file) {
+      try {
+        const { ext, base, name, dir } = path.parse(file)
+        const currentExt = ext.split('.')[1]
+        const fileType = await FileType.fromFile(file)
+
+        currentFile = {
+          currentExt,
+          base,
+          name,
+          dir,
+          rightExt: currentExt,
+          type: 'other',
+          file,
+        }
+
+        if (fileType) {
+          const { mime, ext: rightExt } = fileType
+          const type = mime.split('/')[0]
+
+          currentFile = { ...currentFile, rightExt, type }
+        }
+      } catch (e) {
+        throw new Error(e)
+      }
+    }
+
+    async function createFileName() {
+      const { rightExt, name } = currentFile
+
+      if (isFileHasRightExt()) {
+        if (await isSameBaseFileExists()) {
+          currentFile = {
+            ...currentFile,
+            base: `${name}_copy.${rightExt}`,
+          }
           return
         }
         return
       }
 
-      const { base, type } = this.currentFile
-      const fileDir = this.files[type].path
-
-      const newFilePath = path.join(fileDir, base)
-
-      await fs.copyFile(file, newFilePath)
-      await fs.remove(file)
-    } catch (e) {
-      throw new Error(e)
+      currentFile = { ...currentFile, base: `${name}.${rightExt}` }
     }
-  }
 
-  async setCurrentFile(file) {
-    try {
-      const { ext, base, name, dir } = path.parse(file)
-      const currentExt = ext.split('.')[1]
-      const { mime, ext: rightExt } = await FileType.fromFile(file)
-      const type = mime.split('/')[0]
+    function isFileHasRightExt() {
+      const { rightExt, currentExt } = currentFile
 
-      this.currentFile = { currentExt, base, name, dir, rightExt, type, file }
-    } catch (e) {
-      throw new Error(e)
+      return rightExt === currentExt
     }
-  }
 
-  createFileName() {
-    const { rightExt, name } = this.currentFile
+    async function isSameBaseFileExists() {
+      try {
+        const { type, base } = currentFile
+        const filePath = path.join(files[type].path, base)
 
-    if (this.isFileHasRightExt()) {
-      if (this.isSameBaseFileExists()) {
-        this.currentFile = {
-          ...this.currentFile,
-          base: `${name}_copy.${rightExt}`,
-        }
-        return
+        return await fs.pathExists(filePath)
+      } catch (e) {
+        throw new Error(e)
       }
-      return
     }
 
-    this.currentFile = { ...this.currentFile, base: `${name}.${rightExt}` }
-  }
+    async function createFileDirectory() {
+      try {
+        const { type } = currentFile
 
-  isFileHasRightExt() {
-    const { rightExt, currentExt } = this.currentFile
+        if (isFileTypeDirExists()) return files[type].path
 
-    return rightExt === currentExt
-  }
+        files = { ...files, [type]: {} }
 
-  isSameBaseFileExists() {
-    const { type, base } = this.currentFile
-    const filePath = path.join(this.files[type].path, base)
+        const newFilePath = createFilePath()
 
-    return fs.existsSync(filePath)
-  }
+        const pathExists = await fs.pathExists(newFilePath)
+        if (pathExists) return newFilePath
 
-  createFileDirectory() {
-    const { type } = this.currentFile
+        await fs.mkdir(newFilePath)
 
-    if (this.isFileTypeDirExists()) return this.files[type].path
+        return newFilePath
+      } catch (e) {
+        throw new Error(e)
+      }
+    }
 
-    this.files = { ...this.files, [type]: {} }
+    function isFileTypeDirExists() {
+      return files.hasOwnProperty(currentFile.type)
+    }
 
-    const newFilePath = this.createFilePath()
+    function createFilePath() {
+      const { type } = currentFile
 
-    if (fs.existsSync(newFilePath)) return newFilePath
+      const newFilePath = path.join(directory, currentFile.type)
 
-    fs.mkdirSync(newFilePath)
+      files[type].path = newFilePath
 
-    return newFilePath
-  }
+      return newFilePath
+    }
 
-  isFileTypeDirExists() {
-    return this.files.hasOwnProperty(this.currentFile.type)
-  }
+    function isFileOnRightDir() {
+      return files[currentFile.type].path === currentFile.dir
+    }
 
-  createFilePath() {
-    const { type } = this.currentFile
+    async function renameFile() {
+      try {
+        const { file, name, dir } = currentFile
 
-    const newFilePath = path.join(this.directory, this.currentFile.type)
+        const newPath = path.join(dir, name)
 
-    this.files[type].path = newFilePath
+        await fs.rename(file, newPath)
+      } catch (e) {
+        throw new Error(e)
+      }
+    }
 
-    return newFilePath
-  }
-
-  isFileOnRightDir() {
-    return this.files[this.currentFile.type].path === this.currentFile.dir
-  }
-
-  renameFile() {
-    const { file, name, dir } = this.currentFile
-
-    const newPath = path.join(dir, name)
-
-    fs.renameSync(file, newPath)
+    return files
+  } catch (e) {
+    throw new Error(e)
   }
 }
 
-module.exports = FilesOrganizer
+module.exports = sortFilesByType
