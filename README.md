@@ -2,7 +2,7 @@
 
 The module sorts and distributes files in directories by their type
 
-![npm](https://img.shields.io/npm/v/sort-files-by-type?style=for-the-badge) ![Cirrus CI - Base Branch Build Status](https://img.shields.io/cirrus/github/ValentinAlekhin/sort-files-by-type?label=test&style=for-the-badge)
+![npm](https://img.shields.io/npm/v/sort-files-by-type?style=for-the-badge) ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/ValentinAlekhin/sort-files-by-type/Test?label=test&style=for-the-badge)
 
 ## Installation
 
