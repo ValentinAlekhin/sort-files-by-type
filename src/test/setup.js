@@ -4,6 +4,7 @@ const path = require('path')
 const appRootPath = require('app-root-path').toString()
 const dataPath = path.join(appRootPath, 'data')
 const testFilesPath = path.join(appRootPath, 'src', 'test', 'files')
+const filesCount = fs.readdirSync(testFilesPath).length
 
 const setup = () => {
   beforeEach(() => {
@@ -18,4 +19,4 @@ const setup = () => {
   })
 }
 
-module.exports = { dataPath, testFilesPath, setup }
+module.exports = { dataPath, testFilesPath, filesCount, setup }
