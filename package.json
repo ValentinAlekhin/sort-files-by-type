@@ -1,7 +1,7 @@
 {
-  "name": "ordering-cli",
-  "version": "1.0.3",
-  "description": "Программа сортирует файлы в папки по их типу",
+  "name": "sort-files-by-type",
+  "version": "1.0.0",
+  "description": "The module sorts and distributes files in directories by their type",
   "main": "./src/index.js",
   "scripts": {
     "test": "jest"
@@ -12,9 +12,9 @@
   "author": "Valentin Alekhin <alekhin.v99gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ValentinAlekhin/ordering-cli"
+    "url": "git+https://github.com/ValentinAlekhin/sort-files-by-type"
   },
-  "homepage": "https://github.com/ValentinAlekhin/ordering-cli",
+  "homepage": "https://github.com/ValentinAlekhin/sort-files-by-type",
   "license": "ISC",
   "dependencies": {
     "app-root-path": "^3.0.0",

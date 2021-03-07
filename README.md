@@ -1,8 +1,8 @@
 # sort-files-by-type
 
-Программа удаляет копии фото в дочерних диретороиях и сортирует в них файлы в папки по их типу
+The module sorts and distributes files in directories by their type
 
-![npm](https://img.shields.io/npm/v/fs-extra?style=for-the-badge)
+![npm](https://img.shields.io/npm/v/sort-files-by-type?style=for-the-badge)
 
 ## Installation
 
@@ -15,17 +15,18 @@ $ npm i sort-files-by-type
 ```js
 const SortFilesByType = require('sort-files-by-type')
 
-const sortFiles = new SortFilesByType('path/to/files/')
-
 // Async with promises:
-sortFiles.then().catch(err => console.log(err))
+SortFilesByType('path/to/files/')
+  .then((res = console.log(res)))
+  .catch(err => console.log(err))
 
 // Async/Await:
 async function start() {
   try {
-    await sortFiles()
+    const res = await SortFilesByType('path/to/files/')
+    console.log(res)
   } catch (err) {
-    console.error(err)
+    console.log(err)
   }
 }
 
